@@ -25,7 +25,8 @@ final public class Problem {
 	public enum Strategy {
 		BFS,
 		DFS,
-		IDFS;
+		IDFS,
+		AStar;
 		int depth = 0;
 	}
 	public boolean isGoalState (Node node) {

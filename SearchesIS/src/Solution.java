@@ -1,4 +1,7 @@
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -11,41 +14,54 @@ public class Solution {
 		Problem problem = parser.getProblem();
 		Problem.Strategy strategy = parser.getStrategy();
 		solution.printSolution(solution.treeSearch(problem, strategy));
+		System.out.println("TOTAL VISITED: " + solution.nodesVisited);
 	}
-	
+	int nodesVisited = 1;
 	Node treeSearch (Problem problem, Problem.Strategy strategy) {
 		Fringe fringe = new Fringe();
 		Node root = init(problem);
 		fringe.add(root);
 		while (true) {
-			if (fringe.isEmpty(strategy) == true)
+			if (fringe.isEmpty() == true)
 				return null;
-			Node node = fringe.pop(strategy);
-			System.out.println(node.action + " " + node.depth);
+			Node node = fringe.pop(problem, strategy);
+			//System.out.println(node.action + " " + node.depth);
 			if (problem.isGoalState(node))
 				return node;
-			List<Node> toAdd = expand (node, problem, strategy);
+			List<Node> toAdd = expand (node, problem, strategy, fringe);
+			nodesVisited += toAdd.size();
 			fringe.addAll(toAdd);
 		}
 	}
 	
-	List<Node> expand (Node node, Problem problem, Problem.Strategy strategy) {
+	List<Node> expand (Node node, Problem problem, Problem.Strategy strategy, Fringe fringe) {
 		switch (strategy) {
 			case BFS:
 				return expandBFS(node, problem);
 			case DFS:
 				return expandDFS(node, problem);
 			case IDFS:
-				return expandIterativeDFS(node, problem, strategy);
+				return expandIterativeDFS(node, problem, strategy, fringe.isEmpty());
+			case AStar:
+				return expandBFS (node, problem);
 		}
 		return null;
 	}
 	
 	void printSolution (Node node) {
+		List<Node> solutionPath = new ArrayList<>();
 		while (node.parent != null) {
-			System.out.println (node.action);
+			//System.out.println (node.action);
+			solutionPath.add(node);
 			node = node.parent;
 		}
+		solutionPath.add(node);
+		Collections.reverse(solutionPath);
+		for (int i = 0; i < solutionPath.size() - 1; i++) {
+			Node n = solutionPath.get(i);
+			//System.out.print("(" + n.state.agent.y + ", " + n.state.agent.x + ") " + solutionPath.get(i + 1).action + ",  ");
+		}
+		//System.out.print("(" + solutionPath.get(i).state.agent.y + ", " + n.state.agent.x);
 	}
 	
 	List<Node> expandBFS (Node parent, Problem problem) {
@@ -71,11 +87,16 @@ public class Solution {
 		return toExpand;
 	}
 	
-	List<Node> expandIterativeDFS (Node parent, Problem problem, Problem.Strategy strategy) {
+	List<Node> expandIterativeDFS (Node parent, Problem problem, Problem.Strategy strategy, boolean isEmpty) {
 		if (parent.depth < strategy.depth)
-			return expandDFS (parent, problem);
-		strategy.depth++;
-		List<Node> list = new LinkedList<>(); list.add(init(problem));
+			return expandBFS (parent, problem);
+		List<Node> list = new LinkedList<>();
+		//System.out.println(strategy.depth);
+		if (isEmpty) {
+			strategy.depth++;
+			list.add(init(problem));
+			return list;
+		}
 		return list;
 	}
 	Node createNode (Node parent, Problem.Actions action, Problem problem) {
@@ -83,7 +104,7 @@ public class Solution {
 		node.depth = parent.depth + 1;
 		node.action = action;
 		node.parent = parent;
-		node.pathCost = problem.pathCost;
+		node.pathCost = node.parent.pathCost + problem.pathCost;
 		node.state.agent.y = parent.state.agent.y + action.y;
 		node.state.agent.x = parent.state.agent.x + action.x;
 		node.state.config = copyChar(parent.state.config);
@@ -96,7 +117,7 @@ public class Solution {
 	}
 	
 	class Fringe extends LinkedList<Node> {
-		Node pop (Problem.Strategy strategy) {
+		Node pop (Problem problem, Problem.Strategy strategy) {
 			switch (strategy) {
 				case BFS:
 					return pop();
@@ -104,20 +125,29 @@ public class Solution {
 					return removeLast();
 				case IDFS:
 					return removeLast();
+				case AStar: {
+					return remove(getMinimumIndex(problem, this)); 
+				}
 			}
 			return null;
 		}
-		boolean isEmpty (Problem.Strategy strategy) {
-			switch (strategy) {
-				case IDFS:
-					return false;
-			default:
-				break;
-			}
-			return isEmpty();
-		}
 	}
 
+	int getMinimumIndex (Problem problem, Fringe fringe) {
+		int minimum = Integer.MAX_VALUE, pos = 0;
+		Iterator<Node> it = fringe.iterator();
+		Node node;
+		for (int i = 0; i < fringe.size(); i++) {
+			node = it.next();
+			int estimatedCost = estimatedCost(problem, node);
+			if (minimum > estimatedCost + node.pathCost) {
+				minimum = estimatedCost + node.pathCost;
+				pos = i;
+			}
+		}
+		return pos;
+	}
+	
 	char[][] copyChar (char[][] toCopy) {
 		char[][] state = new char[toCopy.length][];
 		for (int i = 0; i < toCopy.length; i++) {
@@ -126,6 +156,30 @@ public class Solution {
 				state[i][j] = toCopy[i][j];
 		}
 		return state;
+	}
+	
+	private int estimatedCost (Problem problem, Node node) {
+		int score = 0, i, j;
+		for (i = 0; i < node.state.config.length; i++)  {
+			for (j = 0; j < node.state.config[i].length; j++) {
+				if (node.state.config[i][j] != '0')
+					score += getManhattan (new Position (i, j), findPosition (problem, node.state.config[i][j]));
+			}
+		}
+		return score;
+	}
+	
+	private int getManhattan (Position p1, Position p2) {
+		return Math.abs(p1.y - p2.y) + Math.abs(p1.x - p2.x);
+	}
+	
+	private Position findPosition (Problem problem, char c) {
+		for (int i = 0; i < problem.goalState.length; i++) 
+			for (int j = 0; j < problem.goalState[i].length; j++)
+				if (problem.goalState[i][j] == c) 
+					return new Position (i, j);
+				
+		return null;
 	}
 	
 	private Node init (Problem problem) {
