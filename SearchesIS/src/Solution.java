@@ -13,10 +13,30 @@ public class Solution {
 		Parser parser = new Parser();
 		Problem problem = parser.getProblem();
 		Problem.Strategy strategy = parser.getStrategy();
+		System.out.println("START STATE with agent represented by '1', agent position: ("  + problem.agentPos.y + ", " + problem.agentPos.x + ")");
+		for (int i = 0; i < problem.startState.length; i++) {
+			for (int j = 0; j < problem.startState.length; j++)
+				if (problem.agentPos.y == i && problem.agentPos.x == j)
+					System.out.print("1");
+				else
+					System.out.print(problem.startState[i][j]);
+			System.out.println();
+		}
+		System.out.println();
+		System.out.println("GOAL STATE");
+		for (int i = 0; i < problem.goalState.length; i++) {
+			for (int j = 0; j < problem.goalState.length; j++)
+					System.out.print(problem.goalState[i][j]);
+			System.out.println();
+		}
+		System.out.println();
+
 		solution.printSolution(solution.treeSearch(problem, strategy));
-		System.out.println("TOTAL VISITED: " + solution.nodesVisited);
+		//System.out.println("TOTAL NODES VISITED: " + solution.nodesVisited);
+		//System.out.println("TOTAL NODES EXPANDED: " + solution.nodesExpanded);
+		System.out.println("Maximum depth: " + solution.maximumDepth);
 	}
-	int nodesVisited = 1;
+	int nodesVisited = 1, nodesExpanded = 0, maximumDepth = -1;
 	Node treeSearch (Problem problem, Problem.Strategy strategy) {
 		Fringe fringe = new Fringe();
 		Node root = init(problem);
@@ -26,8 +46,11 @@ public class Solution {
 				return null;
 			Node node = fringe.pop(problem, strategy);
 			//System.out.println(node.action + " " + node.depth);
+			if (maximumDepth < node.depth)
+				maximumDepth = node.depth;
 			if (problem.isGoalState(node))
 				return node;
+			nodesExpanded++;
 			List<Node> toAdd = expand (node, problem, strategy, fringe);
 			nodesVisited += toAdd.size();
 			fringe.addAll(toAdd);
@@ -57,9 +80,13 @@ public class Solution {
 		}
 		solutionPath.add(node);
 		Collections.reverse(solutionPath);
-		for (int i = 0; i < solutionPath.size() - 1; i++) {
-			Node n = solutionPath.get(i);
-			//System.out.print("(" + n.state.agent.y + ", " + n.state.agent.x + ") " + solutionPath.get(i + 1).action + ",  ");
+		for (int i = 1; i < solutionPath.size(); i++) {
+			Node n = solutionPath.get(i), nP = solutionPath.get(i - 1);
+			System.out.print("(" + n.action + ")" + " Agent moves from " + "(" + nP.state.agent.y + ", " + nP.state.agent.x + ") to "
+					+ "(" + n.state.agent.y + ", " + n.state.agent.x + ") " );
+			if (nP.state.config[n.state.agent.y][n.state.agent.x] != '0')
+				System.out.print("--- Block " + nP.state.config[n.state.agent.y][n.state.agent.x] + " moved to " + "(" + nP.state.agent.y + ", " + nP.state.agent.x + ") " );
+			System.out.println();
 		}
 		//System.out.print("(" + solutionPath.get(i).state.agent.y + ", " + n.state.agent.x);
 	}
