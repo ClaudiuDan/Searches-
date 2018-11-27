@@ -9,11 +9,8 @@ import java.util.Random;
 
 public class Solution {
 	public static void main (String[] args) throws FileNotFoundException {
-		Solution solution = new Solution ();
 		Parser parser = new Parser();
-		Problem problem = parser.getProblem();
-		Problem.Strategy strategy = parser.getStrategy();
-		System.out.println("START STATE with agent represented by '1', agent position: ("  + problem.agentPos.y + ", " + problem.agentPos.x + ")");
+		/*System.out.println("START STATE with agent represented by '1', agent position: ("  + problem.agentPos.y + ", " + problem.agentPos.x + ")");
 		for (int i = 0; i < problem.startState.length; i++) {
 			for (int j = 0; j < problem.startState.length; j++)
 				if (problem.agentPos.y == i && problem.agentPos.x == j)
@@ -29,12 +26,21 @@ public class Solution {
 					System.out.print(problem.goalState[i][j]);
 			System.out.println();
 		}
-		System.out.println();
+		System.out.println();*/
 
-		solution.printSolution(solution.treeSearch(problem, strategy));
+		//solution.printSolution(solution.treeSearch(problem, strategy));
 		//System.out.println("TOTAL NODES VISITED: " + solution.nodesVisited);
-		//System.out.println("TOTAL NODES EXPANDED: " + solution.nodesExpanded);
-		System.out.println("Maximum depth: " + solution.maximumDepth);
+		for (int i = 1; i <= 11; i++) {
+			Problem problem = parser.getProblem();
+			Problem.Strategy strategy = parser.getStrategy();
+			Solution solution = new Solution ();
+			if (i == 7) {
+			solution.treeSearch(problem, strategy);
+			//System.out.println(solution.maximumDepth);
+			System.out.println(solution.nodesExpanded);
+			}
+		}
+		
 	}
 	int nodesVisited = 1, nodesExpanded = 0, maximumDepth = -1;
 	Node treeSearch (Problem problem, Problem.Strategy strategy) {
@@ -44,12 +50,18 @@ public class Solution {
 		while (true) {
 			if (fringe.isEmpty() == true)
 				return null;
+			System.out.println("pop");
 			Node node = fringe.pop(problem, strategy);
 			//System.out.println(node.action + " " + node.depth);
 			if (maximumDepth < node.depth)
 				maximumDepth = node.depth;
 			if (problem.isGoalState(node))
 				return node;
+			/*if (nodesExpanded > 3000000) {
+				nodesExpanded = -1;
+				return null;
+			}*/
+			System.out.println(nodesExpanded);
 			nodesExpanded++;
 			List<Node> toAdd = expand (node, problem, strategy, fringe);
 			nodesVisited += toAdd.size();
@@ -115,6 +127,8 @@ public class Solution {
 	}
 	
 	List<Node> expandIterativeDFS (Node parent, Problem problem, Problem.Strategy strategy, boolean isEmpty) {
+		int i = 0;
+		i = (i + 1) % 10;
 		if (parent.depth < strategy.depth)
 			return expandBFS (parent, problem);
 		List<Node> list = new LinkedList<>();

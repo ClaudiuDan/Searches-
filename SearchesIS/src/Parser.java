@@ -29,6 +29,8 @@ public class Parser {
 	
 	public Problem.Strategy getStrategy () {
 		reader.nextLine();
-		return Problem.Strategy.valueOf(reader.nextLine());
+		String strategy = reader.nextLine();
+		reader.nextLine();
+		return Problem.Strategy.valueOf(strategy);
 	}
 }
