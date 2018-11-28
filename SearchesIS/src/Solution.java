@@ -30,19 +30,18 @@ public class Solution {
 
 		//solution.printSolution(solution.treeSearch(problem, strategy));
 		//System.out.println("TOTAL NODES VISITED: " + solution.nodesVisited);
-		for (int i = 1; i <= 11; i++) {
+		for (int i = 1; i <= 15; i++) {
 			Problem problem = parser.getProblem();
 			Problem.Strategy strategy = parser.getStrategy();
 			Solution solution = new Solution ();
-			if (i == 7) {
+			//for (int j = 0; j < 50; j++)//{
 			solution.treeSearch(problem, strategy);
 			//System.out.println(solution.maximumDepth);
-			System.out.println(solution.nodesExpanded);
-			}
+			System.out.println(solution.nodesInMemory);//}
 		}
 		
 	}
-	int nodesVisited = 1, nodesExpanded = 0, maximumDepth = -1;
+	int nodesVisited = 1, nodesExpanded = 0, maximumDepth = -1, nodesInMemory = -1;
 	Node treeSearch (Problem problem, Problem.Strategy strategy) {
 		Fringe fringe = new Fringe();
 		Node root = init(problem);
@@ -50,7 +49,9 @@ public class Solution {
 		while (true) {
 			if (fringe.isEmpty() == true)
 				return null;
-			System.out.println("pop");
+			//System.out.println("pop");
+			if (fringe.size() > nodesInMemory)
+				nodesInMemory = fringe.size();
 			Node node = fringe.pop(problem, strategy);
 			//System.out.println(node.action + " " + node.depth);
 			if (maximumDepth < node.depth)
@@ -61,7 +62,7 @@ public class Solution {
 				nodesExpanded = -1;
 				return null;
 			}*/
-			System.out.println(nodesExpanded);
+			//System.out.println(nodesExpanded);
 			nodesExpanded++;
 			List<Node> toAdd = expand (node, problem, strategy, fringe);
 			nodesVisited += toAdd.size();
